@@ -8,7 +8,6 @@ from fastapi import APIRouter
 
 from src.shared.schemas.response_models import HealthResponse
 from src.shared.utils.datetime_utils import utcnow, to_iso_string
-from src import __version__
 
 router = APIRouter()
 
@@ -23,7 +22,7 @@ async def health_check() -> HealthResponse:
     """
     return HealthResponse(
         status="ok",
-        version=__version__,
+        version="1.0.0",
         timestamp=to_iso_string(utcnow()),
         details={}
     )
