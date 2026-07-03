@@ -1,0 +1,3 @@
+"""
+Candidate selection components.
+"""

@@ -1,1 +1,3 @@
-"""Recommendation domain layer."""
+"""
+Recommendation domain entities.
+"""

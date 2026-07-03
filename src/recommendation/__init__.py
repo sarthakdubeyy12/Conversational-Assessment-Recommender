@@ -1,5 +1,5 @@
-"""Recommendation feature module."""
+"""
+Recommendation engine.
 
-from src.recommendation.application.recommendation_service import RecommendationService
-
-__all__ = ["RecommendationService"]
+Transforms retrieval results into ranked, validated recommendations.
+"""
