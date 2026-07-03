@@ -1,4 +1,8 @@
-"""API-related constants."""
+"""
+API-related constants.
+
+Centralized constants for API configuration.
+"""
 
 # Response limits
 MAX_RECOMMENDATIONS = 10
@@ -6,10 +10,38 @@ MIN_RECOMMENDATIONS = 1
 
 # Turn limits
 MAX_CONVERSATION_TURNS = 8
+MIN_CONVERSATION_TURNS = 1
+
+# Pagination
+DEFAULT_PAGE_SIZE = 10
+MAX_PAGE_SIZE = 100
 
 # Timeout
 REQUEST_TIMEOUT_SECONDS = 30
+LLM_TIMEOUT_SECONDS = 30
+EMBEDDING_TIMEOUT_SECONDS = 10
 
 # Role names
 USER_ROLE = "user"
 ASSISTANT_ROLE = "assistant"
+SYSTEM_ROLE = "system"
+
+# HTTP Status codes (commonly used)
+HTTP_200_OK = 200
+HTTP_201_CREATED = 201
+HTTP_400_BAD_REQUEST = 400
+HTTP_401_UNAUTHORIZED = 401
+HTTP_403_FORBIDDEN = 403
+HTTP_404_NOT_FOUND = 404
+HTTP_408_REQUEST_TIMEOUT = 408
+HTTP_500_INTERNAL_SERVER_ERROR = 500
+HTTP_503_SERVICE_UNAVAILABLE = 503
+
+# Headers
+HEADER_REQUEST_ID = "X-Request-ID"
+HEADER_CORRELATION_ID = "X-Correlation-ID"
+HEADER_CONTENT_TYPE = "Content-Type"
+
+# Content Types
+CONTENT_TYPE_JSON = "application/json"
+CONTENT_TYPE_TEXT = "text/plain"
