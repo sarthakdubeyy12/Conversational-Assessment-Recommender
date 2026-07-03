@@ -1,0 +1,175 @@
+===========================================================
+RETRIEVAL PIPELINE FLOW DIAGRAM
+===========================================================
+
+INPUT
+┌─────────────────────────────────────────────────────────┐
+│ ConversationState (hiring requirements)                 │
+│ IntentResult (user intent)                              │
+└─────────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│ STAGE 1: QUERY BUILDING (1-3ms)                         │
+│ ProductionQueryBuilder                                  │
+│ ─────────────────────────────────────────────────────── │
+│ • Extract role, seniority, skills from state           │
+│ • Generate 1-3 optimized queries                       │
+│ • Normalize and clean text                             │
+│ • Prioritize important fields                           │
+└─────────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│ METADATA FILTER BUILDING                                │
+│ MetadataFilterBuilder                                   │
+│ ─────────────────────────────────────────────────────── │
+│ • Build ChromaDB-compatible filters                     │
+│ • Assessment type, language, category                   │
+│ • Job level, industry filtering                         │
+└─────────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│ STAGE 2: SEMANTIC RETRIEVAL (50-100ms)                  │
+│ SemanticSearchService + ChromaDB                        │
+│ ─────────────────────────────────────────────────────── │
+│ • For each query:                                        │
+│   - Convert to embedding                                │
+│   - Search ChromaDB with filters                        │
+│   - Retrieve top-K chunks (default: 20)                 │
+│ • Aggregate results from all queries                    │
+│ • Total chunks retrieved: 20-60                         │
+└─────────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│ STAGE 3: HYBRID RANKING (5-10ms)                        │
+│ HybridRanker                                            │
+│ ─────────────────────────────────────────────────────── │
+│ For each result:                                         │
+│   • Semantic Score (weight: 0.5)                        │
+│     - From vector similarity                            │
+│   • Metadata Score (weight: 0.3)                        │
+│     - Assessment type match                             │
+│     - Language match                                    │
+│     - Job level match                                   │
+│     - Industry match                                    │
+│   • Skill Score (weight: 0.2)                           │
+│     - Overlap: required_skills ∩ assessment_skills      │
+│   • Final = 0.5×semantic + 0.3×metadata + 0.2×skills    │
+│ • Sort by final ranking score (descending)              │
+└─────────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│ STAGE 4: DUPLICATE REMOVAL (1-2ms)                      │
+│ DuplicateRemover                                        │
+│ ─────────────────────────────────────────────────────── │
+│ • Group results by assessment_id                        │
+│ • Keep highest-ranked chunk per assessment              │
+│ • Preserve original ranking order                       │
+│ • Result: Unique assessments                            │
+└─────────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│ STAGE 5: CONTEXT COMPRESSION (2-5ms)                    │
+│ ContextCompressor                                       │
+│ ─────────────────────────────────────────────────────── │
+│ • Limit to top N assessments (default: 5)              │
+│ • Format each assessment:                               │
+│   - Name, URL, Category, Type                           │
+│   - Skills, Competencies, Duration                      │
+│   - Job Levels, Languages                               │
+│   - Description (truncated to 200 chars)                │
+│ • Estimate token count (4 chars ≈ 1 token)             │
+│ • Output: LLM-ready compressed context                  │
+└─────────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│ STAGE 6: VALIDATION (<1ms)                              │
+│ RetrievalValidator                                      │
+│ ─────────────────────────────────────────────────────── │
+│ • Check for empty results                               │
+│ • Validate similarity scores (min: 0.3)                 │
+│ • Check metadata completeness                           │
+│ • Validate URLs                                         │
+│ • Generate warnings (non-blocking)                      │
+└─────────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│ PIPELINE RESULT ASSEMBLY                                │
+│ ─────────────────────────────────────────────────────── │
+│ • Collect all ranked documents                          │
+│ • Package compressed context                            │
+│ • Calculate statistics (all stages)                     │
+│ • Build decision rationale                              │
+│ • Attach validation results                             │
+└─────────────────────────────────────────────────────────┘
+                         │
+                         ▼
+OUTPUT
+┌─────────────────────────────────────────────────────────┐
+│ PipelineResult                                          │
+│ ═════════════════════════════════════════════════════── │
+│ • ranked_documents: List[RankedDocument]                │
+│ • compressed_context: str (LLM-ready)                   │
+│ • context_token_count: int                              │
+│ • generated_queries: List[str]                          │
+│ • applied_filters: Dict[str, Any]                       │
+│ • statistics: PipelineStatistics                        │
+│   - Total latency: ~60-120ms                            │
+│   - Per-stage timing                                    │
+│   - Retrieval metrics                                   │
+│   - Quality metrics                                     │
+│ • is_valid: bool                                        │
+│ • validation_warnings: List[str]                        │
+│ • decision_rationale: str                               │
+└─────────────────────────────────────────────────────────┘
+                         │
+                         ▼
+                    DOWNSTREAM
+         ┌──────────────┬──────────────┐
+         ▼              ▼              ▼
+  Recommendation   Comparison    Clarification
+     Engine          Engine         Engine
+
+===========================================================
+PERFORMANCE PROFILE
+===========================================================
+
+Typical Latency Distribution:
+┌──────────────────────────────────────────┐
+│ Query Building      ▓░░░░░░░░░░  (1-3ms)  │
+│ Retrieval           ▓▓▓▓▓▓▓▓▓▓  (50-100ms)│
+│ Ranking             ▓▓░░░░░░░░  (5-10ms)  │
+│ Deduplication       ▓░░░░░░░░░  (1-2ms)   │
+│ Compression         ▓░░░░░░░░░  (2-5ms)   │
+│ Validation          ▓░░░░░░░░░  (<1ms)    │
+└──────────────────────────────────────────┘
+Total: 60-120ms
+
+===========================================================
+METRICS TRACKED
+===========================================================
+
+Performance Metrics:
+✓ Per-stage latency (ms)
+✓ Total pipeline latency (ms)
+
+Retrieval Metrics:
+✓ Chunks retrieved (initial)
+✓ Chunks after filtering
+✓ Chunks after deduplication
+✓ Final unique assessments
+
+Quality Metrics:
+✓ Average similarity score (0-1)
+✓ Average ranking score (0-1)
+✓ Compression ratio (%)
+✓ Metadata coverage (%)
+
+===========================================================
