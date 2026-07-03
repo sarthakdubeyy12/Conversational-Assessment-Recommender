@@ -1,1 +1,1 @@
-"""Guardrails domain layer."""
+"""Guardrails domain module."""
