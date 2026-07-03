@@ -1,17 +1,27 @@
-"""Conversation-specific exceptions."""
+"""
+Conversation exceptions.
 
-from src.shared.exceptions.base import BaseAppException
+Domain-specific exceptions for conversation operations.
+"""
 
-
-class ConversationError(BaseAppException):
-    """Raised when conversation processing fails."""
-    
-    def __init__(self, message: str = "Conversation processing failed") -> None:
-        super().__init__(message, status_code=500)
+from src.shared.exceptions.base import BaseApplicationException
 
 
-class LLMError(BaseAppException):
-    """Raised when LLM call fails."""
-    
-    def __init__(self, message: str = "LLM generation failed") -> None:
-        super().__init__(message, status_code=500)
+class ConversationException(BaseApplicationException):
+    """Base conversation exception."""
+    pass
+
+
+class StateReconstructionException(ConversationException):
+    """State reconstruction failed."""
+    pass
+
+
+class InvalidMessageException(ConversationException):
+    """Invalid message format."""
+    pass
+
+
+class ValidationException(ConversationException):
+    """State validation failed."""
+    pass
