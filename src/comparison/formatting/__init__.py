@@ -1,0 +1,3 @@
+"""
+Comparison formatting components.
+"""

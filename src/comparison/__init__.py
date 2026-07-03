@@ -1,5 +1,5 @@
-"""Comparison feature module."""
+"""
+Comparison engine.
 
-from src.comparison.application.comparison_service import ComparisonService
-
-__all__ = ["ComparisonService"]
+Compares assessments using catalog-grounded data only.
+"""

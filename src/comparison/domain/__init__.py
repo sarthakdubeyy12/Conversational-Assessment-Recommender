@@ -1,1 +1,3 @@
-"""Comparison domain layer."""
+"""
+Comparison domain entities.
+"""
