@@ -1,4 +1,12 @@
-"""Dependency injection container."""
+"""
+Dependency injection container.
+
+Provides configured dependencies for FastAPI endpoints.
+"""
+
+from src.api.dependencies.orchestrator import get_orchestrator
+
+__all__ = ["get_orchestrator"]
 
 
 class DependencyContainer:

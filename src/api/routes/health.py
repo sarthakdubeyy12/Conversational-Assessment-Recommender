@@ -1,28 +1,28 @@
 """
 Health check endpoint.
-
-Provides application health status.
 """
 
-from fastapi import APIRouter
-
-from src.shared.schemas.response_models import HealthResponse
-from src.shared.utils.datetime_utils import utcnow, to_iso_string
+from fastapi import APIRouter, status
+from src.api.models.health_response import HealthResponse
+from src.shared.config.settings import get_settings
 
 router = APIRouter()
 
 
-@router.get("/health", response_model=HealthResponse)
-async def health_check() -> HealthResponse:
+@router.get("/health", response_model=HealthResponse, status_code=status.HTTP_200_OK)
+async def health() -> HealthResponse:
     """
     Health check endpoint.
     
+    Returns service health status and metadata.
+    
     Returns:
-        Health status information
+        Health response with status and version
     """
+    settings = get_settings()
+    
     return HealthResponse(
-        status="ok",
+        status="healthy",
         version="1.0.0",
-        timestamp=to_iso_string(utcnow()),
-        details={}
+        environment=settings.environment,
     )

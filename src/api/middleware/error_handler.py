@@ -1,14 +1,14 @@
 """
-Global error handling.
+Error handler middleware.
 
-Provides centralized exception handling for FastAPI.
+Provides centralized exception handling without exposing internals.
 """
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
-
-from src.shared.exceptions.base import BaseAppException
-from src.shared.schemas.response_models import ErrorResponse, ErrorDetail
+from fastapi.exceptions import RequestValidationError
+from pydantic import ValidationError
+from src.api.models.error_response import ErrorResponse, ValidationErrorResponse, ErrorDetail
 from src.shared.logging.logger import get_logger
 
 logger = get_logger(__name__)
@@ -16,91 +16,113 @@ logger = get_logger(__name__)
 
 def add_exception_handlers(app: FastAPI) -> None:
     """
-    Add exception handlers to FastAPI app.
+    Add exception handlers to FastAPI application.
     
-    Handles:
-    - Custom application exceptions
-    - Validation errors
-    - Generic exceptions
+    Handles all exceptions and returns user-friendly responses
+    without exposing internal details.
     
     Args:
-        app: FastAPI application
+        app: FastAPI application instance
     """
     
-    @app.exception_handler(BaseAppException)
-    async def base_app_exception_handler(
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(
         request: Request,
-        exc: BaseAppException
+        exc: RequestValidationError,
     ) -> JSONResponse:
-        """Handle custom application exceptions."""
-        logger.error(
-            f"Application error: {exc.error_code}",
-            extra={
-                "error_code": exc.error_code,
-                "message": exc.message,
-                "details": exc.details,
-                "path": request.url.path,
-            }
-        )
+        """
+        Handle request validation errors (422).
         
-        error_response = ErrorResponse(
-            error=ErrorDetail(
-                message=exc.message,
-                code=exc.error_code,
-                details=exc.details
+        Args:
+            request: FastAPI request
+            exc: Validation error
+        
+        Returns:
+            JSON response with validation errors
+        """
+        logger.warning(f"Validation error: {exc.errors()}")
+        
+        # Convert Pydantic errors to our format
+        details = [
+            ErrorDetail(
+                loc=list(err["loc"]),
+                msg=err["msg"],
+                type=err["type"],
             )
+            for err in exc.errors()
+        ]
+        
+        response = ValidationErrorResponse(
+            error="Validation error",
+            detail=details,
         )
         
         return JSONResponse(
-            status_code=exc.status_code,
-            content=error_response.model_dump()
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content=response.model_dump(),
         )
     
-    @app.exception_handler(ValueError)
-    async def value_error_handler(
+    @app.exception_handler(ValidationError)
+    async def pydantic_validation_exception_handler(
         request: Request,
-        exc: ValueError
+        exc: ValidationError,
     ) -> JSONResponse:
-        """Handle ValueError as validation error."""
-        logger.error(
-            f"ValueError: {str(exc)}",
-            extra={"path": request.url.path}
-        )
+        """
+        Handle Pydantic validation errors.
         
-        error_response = ErrorResponse(
-            error=ErrorDetail(
-                message=str(exc),
-                code="VALIDATION_ERROR",
-                details={}
+        Args:
+            request: FastAPI request
+            exc: Validation error
+        
+        Returns:
+            JSON response with validation errors
+        """
+        logger.warning(f"Pydantic validation error: {exc.errors()}")
+        
+        details = [
+            ErrorDetail(
+                loc=list(err["loc"]),
+                msg=err["msg"],
+                type=err["type"],
             )
+            for err in exc.errors()
+        ]
+        
+        response = ValidationErrorResponse(
+            error="Validation error",
+            detail=details,
         )
         
         return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content=error_response.model_dump()
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content=response.model_dump(),
         )
     
     @app.exception_handler(Exception)
-    async def global_exception_handler(
+    async def generic_exception_handler(
         request: Request,
-        exc: Exception
+        exc: Exception,
     ) -> JSONResponse:
-        """Handle all other exceptions."""
-        logger.error(
-            f"Unhandled exception: {type(exc).__name__}",
-            exc_info=True,
-            extra={"path": request.url.path}
-        )
+        """
+        Handle all other exceptions.
         
-        error_response = ErrorResponse(
-            error=ErrorDetail(
-                message="Internal server error",
-                code="INTERNAL_ERROR",
-                details={}
-            )
+        Never exposes stack traces or internal details.
+        
+        Args:
+            request: FastAPI request
+            exc: Exception
+        
+        Returns:
+            JSON response with generic error
+        """
+        logger.error(f"Unhandled exception: {exc}", exc_info=True)
+        
+        response = ErrorResponse(
+            error="Internal server error",
+            detail="An unexpected error occurred",
         )
         
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content=error_response.model_dump()
+            content=response.model_dump(),
         )
