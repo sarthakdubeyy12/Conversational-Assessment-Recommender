@@ -68,3 +68,4 @@ evaluation/metrics/*.json
 # UV
 .uv/
 uv.lock
+.env.bak
