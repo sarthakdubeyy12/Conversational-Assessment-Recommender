@@ -111,7 +111,12 @@ class SentenceTransformerProvider(IEmbeddingProvider):
                 self._model_name,
                 device=self._device,
             )
-            self._dimension = self._model.get_sentence_embedding_dimension()
+            # Use the new method name (renamed in newer versions)
+            try:
+                self._dimension = self._model.get_embedding_dimension()
+            except AttributeError:
+                # Fallback to old method name for compatibility
+                self._dimension = self._model.get_sentence_embedding_dimension()
             logger.info(
                 f"Model loaded: dimension={self._dimension}, "
                 f"max_seq_length={self._model.max_seq_length}"

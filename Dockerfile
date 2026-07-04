@@ -15,6 +15,8 @@ ENV PATH="/root/.local/bin:${PATH}"
 COPY pyproject.toml .
 COPY src/ ./src/
 COPY scripts/ ./scripts/
+COPY evaluation/ ./evaluation/
+COPY tests/ ./tests/
 
 # Install dependencies using pip directly (simpler approach)
 RUN pip install --no-cache-dir \
@@ -29,13 +31,24 @@ RUN pip install --no-cache-dir \
     "playwright>=1.47.0" \
     "openai>=1.45.0" \
     "google-generativeai>=0.8.0" \
-    "python-dotenv>=1.0.0"
+    "python-dotenv>=1.0.0" \
+    "pytest>=8.0.0" \
+    "pytest-asyncio>=0.23.0" \
+    "pytest-cov>=4.1.0" \
+    "httpx>=0.27.0"
 
 # Create data directories
 RUN mkdir -p /app/data/raw /app/data/processed /app/data/embeddings
 
+# Build catalog and knowledge base during image build
+RUN python3 scripts/create_mock_catalog.py && \
+    python3 scripts/build_knowledge_base.py
+
+# Make startup script executable
+RUN chmod +x scripts/startup.sh
+
 # Expose port
 EXPOSE 8000
 
-# Run application
-CMD ["python", "-m", "src.main"]
+# Run application with startup script
+CMD ["bash", "scripts/startup.sh"]

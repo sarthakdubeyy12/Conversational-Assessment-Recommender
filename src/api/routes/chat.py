@@ -72,11 +72,11 @@ async def chat(
             for rec in result.recommendation_result.recommendations[:10]:  # Max 10
                 recommendations.append(
                     RecommendationModel(
-                        title=rec.assessment.name,
-                        url=rec.assessment.url,
-                        description=rec.assessment.description,
-                        competencies=rec.assessment.competencies,
-                        duration=rec.assessment.duration,
+                        title=rec.assessment_name,
+                        url=rec.official_url,
+                        description=f"{rec.category} - {rec.test_type}. {rec.recommendation_reason}",
+                        competencies=rec.matching_competencies,
+                        duration=rec.duration_minutes,
                     )
                 )
         

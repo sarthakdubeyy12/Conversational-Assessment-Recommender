@@ -221,7 +221,13 @@ class ChromaVectorStore(IVectorStore):
         return metadata
     
     def _format_results(self, results: Dict) -> List[Dict[str, Any]]:
-        """Format ChromaDB results."""
+        """
+        Format ChromaDB results.
+        
+        ChromaDB uses L2 (Euclidean) distance by default.
+        Smaller distance = more similar.
+        Convert to similarity score [0, 1] where 1 is most similar.
+        """
         formatted = []
         
         # ChromaDB returns results in nested lists
@@ -231,10 +237,16 @@ class ChromaVectorStore(IVectorStore):
         metadatas = results.get("metadatas", [[]])[0]
         
         for i, chunk_id in enumerate(ids):
+            # ChromaDB L2 distance is always >= 0
+            # Convert to similarity using: similarity = 1 / (1 + distance)
+            # This maps: distance=0 -> similarity=1, distance=inf -> similarity=0
+            distance = abs(distances[i])  # Ensure positive
+            similarity = 1.0 / (1.0 + distance)
+            
             formatted.append({
                 "chunk_id": chunk_id,
-                "distance": distances[i],
-                "similarity": 1 - distances[i],  # Convert distance to similarity
+                "distance": distance,
+                "similarity": similarity,
                 "text": documents[i],
                 "metadata": metadatas[i],
             })
