@@ -128,30 +128,36 @@ class RetrievalPipeline:
             
             results = await self._semantic_search.search(query)
             all_results.extend(results)
+            logger.info(f"Query '{query_text[:50]}...' returned {len(results)} results")
         
         retrieval_ms = (time.time() - retrieval_start) * 1000
         chunks_retrieved = len(all_results)
+        logger.info(f"STAGE 3: Retrieved {chunks_retrieved} total chunks")
         
         # Stage 4: Hybrid ranking
         ranking_start = time.time()
         ranked_docs = self._ranker.rank(all_results, state)
         ranking_ms = (time.time() - ranking_start) * 1000
         chunks_filtered = len(ranked_docs)
+        logger.info(f"STAGE 4: Ranked {chunks_filtered} documents")
         
         # Stage 5: Duplicate removal
         dedup_start = time.time()
         deduplicated = self._duplicate_remover.remove_duplicates(ranked_docs)
         deduplication_ms = (time.time() - dedup_start) * 1000
         chunks_deduplicated = len(deduplicated)
+        logger.info(f"STAGE 5: Deduplicated to {chunks_deduplicated} documents")
         
         # Stage 6: Context compression
         compression_start = time.time()
         compressed_context = self._compressor.compress(deduplicated)
         token_count = self._compressor.estimate_tokens(compressed_context)
         compression_ms = (time.time() - compression_start) * 1000
+        logger.info(f"STAGE 6: Compressed context, {token_count} tokens")
         
         # Stage 7: Validation
         is_valid, warnings = self._validator.validate(deduplicated)
+        logger.info(f"STAGE 7: Validation {'passed' if is_valid else 'failed'}, {len(warnings)} warnings")
         
         # Calculate statistics
         total_latency_ms = (time.time() - start_time) * 1000

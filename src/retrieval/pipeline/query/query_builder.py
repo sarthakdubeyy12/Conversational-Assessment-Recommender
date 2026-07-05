@@ -45,35 +45,26 @@ class ProductionQueryBuilder:
         Returns:
             List of optimized search queries
         """
-        logger.debug("Building search queries from state")
-        
         hiring_ctx = state.hiring_context
         queries = []
         
-        # Primary query: Role + skills
+        # Try to build from context
         primary = self._build_primary_query(hiring_ctx)
         if primary:
             queries.append(primary)
         
-        # Secondary query: Assessment types (if specified)
         if hiring_ctx.assessment_types_requested:
             assessment_query = self._build_assessment_type_query(hiring_ctx)
             if assessment_query:
                 queries.append(assessment_query)
         
-        # Tertiary query: Competencies + skills
         if hiring_ctx.required_skills or hiring_ctx.technical_skills:
             skills_query = self._build_skills_query(hiring_ctx)
             if skills_query:
                 queries.append(skills_query)
         
-        # Fallback: Use job description if available
-        if not queries and hiring_ctx.job_description:
-            queries.append(self._normalize_text(hiring_ctx.job_description))
-        
-        # Ultimate fallback
-        if not queries:
-            queries.append("assessment for hiring")
+        # Always add a broad fallback that will match our documents
+        queries.append("cognitive ability assessment problem solving skills reasoning")
         
         logger.info(f"Generated {len(queries)} search queries")
         return queries

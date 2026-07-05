@@ -63,7 +63,11 @@ class HybridRanker:
         Returns:
             Ranked documents with scores
         """
-        logger.debug(f"Ranking {len(results)} results")
+        if not results:
+            logger.info("No results to rank")
+            return []
+        
+        logger.info(f"Ranking {len(results)} results")
         
         ranked_docs = []
         
@@ -96,7 +100,7 @@ class HybridRanker:
         # Sort by ranking score (descending)
         ranked_docs.sort(key=lambda x: x.ranking_score, reverse=True)
         
-        logger.info(f"Ranked {len(ranked_docs)} documents")
+        logger.info(f"Ranked {len(ranked_docs)} documents successfully")
         return ranked_docs
     
     def _calculate_metadata_score(

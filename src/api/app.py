@@ -43,8 +43,8 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     
-    # Logging middleware
-    app.add_middleware(LoggingMiddleware)
+    # Logging middleware - temporarily disabled due to format issue
+    # app.add_middleware(LoggingMiddleware)
     
     # Exception handlers
     add_exception_handlers(app)

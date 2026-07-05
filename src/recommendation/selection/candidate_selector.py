@@ -58,39 +58,34 @@ class CandidateSelector:
         Returns:
             Filtered list of candidates
         """
-        logger.debug(f"Selecting candidates from {len(ranked_docs)} documents")
+        if not ranked_docs:
+            logger.info("No candidates to select")
+            return []
+        
+        logger.info(f"Selecting candidates from {len(ranked_docs)} documents")
         
         candidates = []
-        filtered_count = 0
         
         for doc in ranked_docs:
             # Check similarity threshold
             if doc.result.similarity_score < self._min_similarity:
-                filtered_count += 1
                 continue
             
             # Check URL requirement
             if self._require_url and not self._is_valid_url(doc.result.url):
-                filtered_count += 1
                 continue
             
             # Check category requirement
             if self._require_category and not doc.result.category:
-                filtered_count += 1
                 continue
             
             # Check name exists
             if not doc.result.assessment_name:
-                filtered_count += 1
                 continue
             
             candidates.append(doc)
         
-        logger.info(
-            f"Selected {len(candidates)} candidates "
-            f"(filtered {filtered_count})"
-        )
-        
+        logger.info(f"Selected {len(candidates)} candidates")
         return candidates
     
     def _is_valid_url(self, url: str) -> bool:

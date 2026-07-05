@@ -76,7 +76,7 @@ async def chat(
                         url=rec.official_url,
                         description=f"{rec.category} - {rec.test_type}. {rec.recommendation_reason}",
                         competencies=rec.matching_competencies,
-                        duration=rec.duration_minutes,
+                        duration=f"{rec.duration_minutes} minutes" if rec.duration_minutes else None,
                     )
                 )
         
