@@ -1,6 +1,6 @@
-# SHL Assessment Recommender
+# Assessment Recommender
 
-Conversational AI system for recommending SHL Individual Test Solutions through natural dialogue.
+Conversational AI system for recommending Individual Test Solutions through natural dialogue.
 
 ## Project Structure
 
