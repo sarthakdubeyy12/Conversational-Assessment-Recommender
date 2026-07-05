@@ -59,6 +59,7 @@ class PatternMatcher:
             r"\b(recommend|suggest|what\s+assessments?|which\s+tests?)\b",
             r"\b(need|want|looking\s+for)\b.*\b(assessments?|tests?)\b",
             r"\b(need|want)\s+to\s+(assess|evaluate|measure|test)\b",  # "need to assess"
+            r"\b(need|want)\s+to\s+(hire|recruit)\b",  # "need to hire"
             r"\b(give\s+me|show\s+me|find\s+me)\b",
             r"\b(hiring|recruit|looking\s+for)\b.*\b(senior|junior|developer|engineer|manager|analyst|designer)\b",
         ]
