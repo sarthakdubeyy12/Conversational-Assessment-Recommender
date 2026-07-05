@@ -33,16 +33,16 @@ class LinkDiscoverer(ILinkDiscoverer):
         """
         self.scraper = scraper
         
-        # Patterns to identify assessment pages
+        # Patterns to identify assessment pages (individual assessments, not category pages)
         self.assessment_patterns = [
-            "/solutions/products/",
-            "/assessment/",
-            "/test-solutions/",
+            "/products/assessments/",  # New SHL URL structure
+            "/solutions/products/assessments/",  # Old SHL URL structure
         ]
         
-        # Patterns to exclude
+        # Patterns to exclude (category pages, bundles, non-assessments)
         self.exclude_patterns = [
             "/job-solutions/",
+            "/job-focused-assessments/",  # Category page
             "/bundles/",
             "/blog/",
             "/resources/",
@@ -51,9 +51,29 @@ class LinkDiscoverer(ILinkDiscoverer):
             "/privacy/",
             "/terms/",
             "/careers/",
+            "/services/",
+            "/training-services/",
+            "/practice-tests/",  # Not individual assessments
+            "/assessment-and-development-centers/",  # Category page only
             ".pdf",
             ".jpg",
             ".png",
+            ".css",
+            ".js",
+        ]
+        
+        # Category pages that should be crawled but not included as assessments
+        self.category_patterns = [
+            "/products/assessments/$",  # Main catalog page
+            "/products/assessments$",
+            "/behavioral-assessments/$",
+            "/behavioral-assessments$",
+            "/cognitive-assessments/$",
+            "/cognitive-assessments$",
+            "/personality-assessment/$",
+            "/personality-assessment$",
+            "/skills-and-simulations/$",
+            "/skills-and-simulations$",
         ]
         
         logger.info("LinkDiscoverer initialized")
@@ -74,7 +94,7 @@ class LinkDiscoverer(ILinkDiscoverer):
         visited_urls: Set[str] = set()
         to_visit: Set[str] = {start_url}
         
-        while to_visit and len(visited_urls) < 100:  # Safety limit
+        while to_visit and len(visited_urls) < 200:  # Safety limit (increased for full catalog)
             url = to_visit.pop()
             
             if url in visited_urls:
@@ -126,24 +146,45 @@ class LinkDiscoverer(ILinkDiscoverer):
     
     def _is_assessment_url(self, url: str) -> bool:
         """
-        Check if URL is an assessment page.
+        Check if URL is an individual assessment page (not a category page).
         
         Args:
             url: URL to check
         
         Returns:
-            True if assessment URL
+            True if individual assessment URL
         """
+        import re
+        
         if not is_valid_url(url):
             return False
         
         # Must match assessment patterns
         matches_pattern = any(pattern in url for pattern in self.assessment_patterns)
+        if not matches_pattern:
+            return False
         
         # Must not match exclude patterns
         matches_exclude = any(pattern in url for pattern in self.exclude_patterns)
+        if matches_exclude:
+            return False
         
-        return matches_pattern and not matches_exclude
+        # Must not be a category page (category pages end with / or are exact matches)
+        for cat_pattern in self.category_patterns:
+            if re.search(cat_pattern, url):
+                return False
+        
+        # URL must have at least 5 path segments to be an individual assessment
+        # e.g., /products/assessments/cognitive-assessments/verify-gplus/
+        # but not /products/assessments/ or /products/assessments/cognitive-assessments/
+        path = url.split('?')[0].rstrip('/')
+        path_segments = [s for s in path.split('/') if s]
+        
+        # Individual assessments have at least 4 segments: products, assessments, category, name
+        if len(path_segments) < 4:
+            return False
+        
+        return True
     
     def _should_crawl(self, url: str, base_url: str) -> bool:
         """

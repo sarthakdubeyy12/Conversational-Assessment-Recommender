@@ -41,7 +41,8 @@ RUN pip install --no-cache-dir \
 RUN mkdir -p /app/data/raw /app/data/processed /app/data/embeddings
 
 # Build catalog and knowledge base during image build
-RUN python3 scripts/create_mock_catalog.py && \
+# Uses sitemap-based scraper to discover real SHL assessments
+RUN python3 scripts/build_catalog.py && \
     python3 scripts/build_knowledge_base.py
 
 # Make startup script executable
