@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: shl-assessment-recommender
+    env: docker
+    region: oregon
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: HOST
+        value: 0.0.0.0
+      - key: LOG_LEVEL
+        value: INFO
+      - key: LLM_PROVIDER
+        value: openai
+      - key: LLM_MODEL
+        value: gpt-4o-mini
+      - key: LLM_TEMPERATURE
+        value: 0.0
+      - key: EMBEDDING_MODEL
+        value: sentence-transformers/all-MiniLM-L6-v2
+      - key: CHROMA_PERSIST_DIRECTORY
+        value: ./data/embeddings
+      - key: CHROMA_COLLECTION_NAME
+        value: shl_assessments
+      - key: CATALOG_PATH
+        value: ./data/processed/catalog.json
+      - key: RETRIEVAL_TOP_K
+        value: 10
+      - key: MAX_CONVERSATION_TURNS
+        value: 8
+      - key: CONVERSATION_TIMEOUT
+        value: 30

@@ -7,7 +7,7 @@ echo ""
 # Check if catalog exists
 if [ ! -f "./data/processed/catalog.json" ]; then
     echo "📦 Building catalog..."
-    python3 scripts/create_mock_catalog.py
+    python3 scripts/build_catalog.py
     echo ""
 fi
 
