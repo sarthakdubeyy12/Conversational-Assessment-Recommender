@@ -66,6 +66,22 @@ def create_app() -> FastAPI:
     app.include_router(health.router, tags=["health"])
     app.include_router(chat.router, tags=["chat"])
     
+    # Root endpoint
+    @app.get("/", tags=["root"])
+    async def root():
+        """Root endpoint - API information."""
+        return {
+            "service": "SHL Assessment Recommender",
+            "version": "1.0.0",
+            "status": "running",
+            "endpoints": {
+                "health": "/health",
+                "chat": "/chat",
+                "docs": "/docs",
+                "openapi": "/openapi.json"
+            }
+        }
+    
     logger.info("FastAPI application created successfully")
     
     return app

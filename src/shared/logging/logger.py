@@ -56,20 +56,21 @@ def setup_logger(
     # Remove existing handlers to avoid duplicates
     logger.handlers.clear()
     
-    # Add request ID filter
-    request_filter = RequestIDFilter()
-    logger.addFilter(request_filter)
-    
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(level)
+    
+    # Add request ID filter to handler (not logger)
+    request_filter = RequestIDFilter()
+    console_handler.addFilter(request_filter)
     
     if json_format:
         from src.shared.logging.formatters import JSONFormatter
         console_formatter = JSONFormatter()
     else:
+        # Simplified format without request_id to avoid formatting errors
         console_formatter = logging.Formatter(
-            fmt="%(asctime)s | %(levelname)-8s | %(request_id)s | %(name)s | %(message)s",
+            fmt="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S"
         )
     
@@ -84,12 +85,16 @@ def setup_logger(
         file_handler = logging.FileHandler(log_file)
         file_handler.setLevel(level)
         
+        # Add request ID filter to file handler
+        file_handler.addFilter(RequestIDFilter())
+        
         if json_format:
             from src.shared.logging.formatters import JSONFormatter
             file_formatter = JSONFormatter()
         else:
+            # Simplified format without request_id to avoid formatting errors
             file_formatter = logging.Formatter(
-                fmt="%(asctime)s | %(levelname)-8s | %(request_id)s | %(name)s | %(message)s",
+                fmt="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
                 datefmt="%Y-%m-%d %H:%M:%S"
             )
         
